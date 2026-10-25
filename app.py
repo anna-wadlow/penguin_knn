@@ -19,7 +19,7 @@ DATA_URL = (
 NUMERIC_FEATURES = [
     "bill_length_mm",
     "bill_depth_mm",
-    "flipped_length_mm",
+    "flipper_length_mm",
     "body_mass_g"
 ]
 
@@ -29,18 +29,18 @@ TARGET = "species"
 
 @st.cache_data
 def load_data():
-    df = pd.read(DATA_URL)
+    df = pd.read_csv(DATA_URL)
     # Select columns that app needs, drop incomplete rows, and clean up the row numbers.
     return df[FEATURES + [TARGET]].dropna().reset_index(drop=True)
 
 @st.cache_resource
-def train_model():
+def train_model(random_state):
     df = load_data()
     X = df[FEATURES]
     y = df[TARGET]
 
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size = 0.2, stratify=y, random_state=813
+        X, y, test_size = 0.2, stratify=y, random_state=random_state
     )
 
     # Apply a different preprocessing step to different groups of columns. Then combine results into one array.
@@ -68,13 +68,24 @@ def train_model():
     grid_search.fit(X_train, y_train)
 
     best_model = grid_search.best_estimator_
-    best_k = grid_search.best_params_["knn_n_neighbors"]
+    best_k = grid_search.best_params_["knn__n_neighbors"]
     cv_score = grid_search.best_score_
     test_acc = best_model.score(X_test, y_test)
     return best_model, best_k, cv_score, test_acc, X_train, y_train
 
 df = load_data()
-model, best_k, cv_score, test_acc, X_train, y_train = train_model()
+random_state = st.sidebar.number_input(
+    "Random state (train/test split seed)",
+    min_value = 0,
+    max_value = 9999,
+    value = 42,
+    step = 1,
+    help="Selecting a different random state reshuffles which penguins go into the training and the test sets "
+    " and K is re-selected by cross-validation."
+)
+
+random_state = int(random_state)
+model, best_k, cv_score, test_acc, X_train, y_train = train_model(random_state)
 
 # -----------------------------
 # Page title
@@ -171,4 +182,12 @@ if st.button("Predict Species"):
     _, neighbor_idx = knn.kneighbors(new_transformed)
     neighbor_labels = y_train.iloc[neighbor_idx[0]]
     counts = neighbor_labels.value_counts()
-    count_text = ", ".join(f"{n} {s}" for s, n in counts.items())
+    count_text = ", ".join(f"{n} are {s}" for s, n in counts.items())
+
+    st.write(
+    f"This kNN model standardizes the numerical and categorical measurements, then finds the "
+    f"**{best_k} most similar penguins** in the training data. Of those "
+    f"{best_k} penguins (neighbors), {count_text}. We can consider the "
+    f"{best_k} penguins (neighbors) as voting. Each species' probability is its share of the votes, "
+    f"and the species with the most votes, **{prediction}** is the prediction."
+)
