@@ -20,7 +20,8 @@ NUMERIC_FEATURES = [
     "bill_length_mm",
     "bill_depth_mm",
     "flipper_length_mm",
-    "body_mass_g"
+    "body_mass_g",
+    "year"
 ]
 
 CATEGORICAL_FEATURES = ["island", "sex"]
@@ -100,7 +101,7 @@ st.set_page_config(
 st.title("Palmer Penguins Species Classifier")
 st.write(
     "This app trains a k-nearest neighbors (kNN) classifier on the Palmer Penguins dataset "
-    "to predict a penguin's species based on their physical measurements, island, and sex. "
+    "to predict a penguin's species based on their physical measurements, island, sex, and year of observation. "
     "Rows with NA values are dropped, numerical values are standardized, and categorical variables are "
     "encoded prior to data classification."
 )
@@ -141,6 +142,7 @@ with left:
 with right:
     island = st.selectbox("Island", sorted(df["island"].unique()))
     sex = st.selectbox("Sex", sorted(df["sex"].unique()))
+    year = st.selectbox("Year observed", sorted(df["year"].unique()))
 
 new_penguin = pd.DataFrame(
     [
@@ -150,7 +152,8 @@ new_penguin = pd.DataFrame(
             "flipper_length_mm": flipper_length,
             "body_mass_g": body_mass,
             "island": island,
-            "sex": sex
+            "sex": sex,
+            "year": year
         }
     ]
 )[FEATURES]
@@ -185,7 +188,7 @@ if st.button("Predict Species"):
     count_text = ", ".join(f"{n} are {s}" for s, n in counts.items())
 
     st.write(
-    f"This kNN model standardizes the numerical and categorical measurements, then finds the "
+    f"This kNN model standardizes the numerical measurements, encodes island and sex, then finds the "
     f"**{best_k} most similar penguins** in the training data. Of those "
     f"{best_k} penguins (neighbors), {count_text}. We can consider the "
     f"{best_k} penguins (neighbors) as voting. Each species' probability is its share of the votes, "
