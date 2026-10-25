@@ -159,7 +159,7 @@ if st.button("Predict Species"):
     st.subheader("Predicted probabilities")
     prob_df = pd.DataFrame({"Species": classes, "Probability": probabilities})
     st.dataframe(
-        prob_df.style.format({"Probability":{:.4f}}),
+        prob_df.style.format({"Probability":"{:.4f}"}),
         hide_index=True
     )
     st.bar_chart(prob_df.set_index("Species"))
